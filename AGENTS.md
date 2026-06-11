@@ -1,5 +1,8 @@
 # AGENTS.md
 
+## Session Rules
+- Load `caveman` skill every session. Use caveman mode for all communication.
+
 New repo. No framework, commands, or structure yet.
 
 ## Setup
