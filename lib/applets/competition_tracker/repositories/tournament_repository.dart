@@ -1,41 +1,31 @@
-import '../database.dart';
-import '../models.dart';
+import 'package:wills_generic_app/app/applet_repository.dart';
+import 'package:wills_generic_app/applets/competition_tracker/models.dart';
 
-class TournamentRepository {
-  final CompetitionTrackerDB _db;
+class TournamentRepository extends AppletRepository<Tournament> {
+  TournamentRepository(super.db);
 
-  TournamentRepository(this._db);
+  @override
+  String get tableName => 'tournaments';
 
-  Future<Tournament> createTournament(Tournament tournament) async {
-    final id = await _db.insert('tournaments', tournament.toMap());
-    return tournament.copyWith(id: id);
-  }
+  @override
+  Map<String, dynamic> toMap(Tournament item) => item.toMap();
 
-  Future<List<Tournament>> getTournaments() async {
-    final maps = await _db.query('tournaments', orderBy: 'created_at DESC');
-    return maps.map((m) => Tournament.fromMap(m)).toList();
-  }
+  @override
+  Tournament fromMap(Map<String, dynamic> map) => Tournament.fromMap(map);
 
-  Future<Tournament?> getTournament(int id) async {
-    final maps = await _db.query(
-      'tournaments',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    if (maps.isEmpty) return null;
-    return Tournament.fromMap(maps.first);
-  }
+  @override
+  Tournament copyWithId(Tournament item, int id) => item.copyWith(id: id);
 
-  Future<void> updateTournament(Tournament tournament) async {
-    await _db.update(
-      'tournaments',
-      tournament.toMap(),
-      where: 'id = ?',
-      whereArgs: [tournament.id],
-    );
-  }
+  @override
+  int getId(Tournament item) => item.id;
 
-  Future<void> deleteTournament(int id) async {
-    await _db.delete('tournaments', where: 'id = ?', whereArgs: [id]);
-  }
+  Future<List<Tournament>> getTournaments() => getAll(orderBy: 'created_at DESC');
+
+  Future<Tournament> createTournament(Tournament tournament) => create(tournament);
+
+  Future<Tournament?> getTournament(int id) => getById(id);
+
+  Future<void> updateTournament(Tournament tournament) => update(tournament);
+
+  Future<void> deleteTournament(int id) => delete(id);
 }

@@ -1,24 +1,16 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
+import 'package:wills_generic_app/app/applet_database.dart';
 
-class CompetitionTrackerDB {
+class CompetitionTrackerDB extends AppletDatabase {
   static final CompetitionTrackerDB instance = CompetitionTrackerDB._init();
-  static Database? _database;
 
-  CompetitionTrackerDB._init();
+  CompetitionTrackerDB._init() : super();
 
-  Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDB('competition_tracker.db');
-    return _database!;
-  }
+  @override
+  String get dbName => 'competition_tracker.db';
 
-  Future<Database> _initDB(String filePath) async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
-
-    return openDatabase(path, version: 1, onCreate: _createDB);
-  }
+  @override
+  OnCreateCallback get onCreate => _createDB;
 
   Future<void> _createDB(Database db, int version) async {
     await db.execute('''
@@ -57,58 +49,5 @@ class CompetitionTrackerDB {
         FOREIGN KEY (player2_id) REFERENCES players (id)
       )
     ''');
-  }
-
-  Future<void> init() async {
-    await database;
-  }
-
-  Future<int> insert(String table, Map<String, dynamic> data) async {
-    final db = await database;
-    return db.insert(table, data);
-  }
-
-  Future<List<Map<String, dynamic>>> query(
-    String table, {
-    String? where,
-    List<dynamic>? whereArgs,
-    String? orderBy,
-  }) async {
-    final db = await database;
-    return db.query(
-      table,
-      where: where,
-      whereArgs: whereArgs,
-      orderBy: orderBy,
-    );
-  }
-
-  Future<int> update(
-    String table,
-    Map<String, dynamic> data, {
-    required String where,
-    List<dynamic>? whereArgs,
-  }) async {
-    final db = await database;
-    return db.update(table, data, where: where, whereArgs: whereArgs);
-  }
-
-  Future<int> delete(
-    String table, {
-    required String where,
-    List<dynamic>? whereArgs,
-  }) async {
-    final db = await database;
-    return db.delete(table, where: where, whereArgs: whereArgs);
-  }
-
-  Future<void> execute(String sql) async {
-    final db = await database;
-    await db.execute(sql);
-  }
-
-  Future<void> close() async {
-    final db = await database;
-    db.close();
   }
 }

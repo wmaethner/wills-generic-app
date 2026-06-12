@@ -17,9 +17,18 @@ App launcher with mini-apps ("applets"). Home screen = iPhone-style icon grid (4
 - `lib/app/app_shell.dart` - Home screen with GridView
 
 ## Adding a New Applet
-1. Create `lib/applets/my_applet/my_applet.dart` and `my_screen.dart`
-2. Extend `Applet` with name, icon, builder
-3. Add to `AppletRegistry.all` list in `applet_registry.dart`
+1. Create `lib/applets/my_applet/` directory
+2. Create `my_applet.dart` - extend `Applet` with name, icon, builder
+3. Create `my_screen.dart` - main screen widget
+4. Create `database.dart` - extend `AppletDatabase`, override `dbName` and `onCreate`
+5. Add to `AppletRegistry.all` list in `applet_registry.dart`
+
+### Repositories (optional)
+- For complex data access, create `repositories/` subdirectory
+- Extend `AppletRepository<T>` with model type
+- Override `tableName`, `toMap`, `fromMap`, `copyWithId`, `getId`
+- Inherited: `create`, `getAll`, `getById`, `update`, `delete`
+- Add convenience methods matching domain (e.g., `getPlayers(tournamentId)`)
 
 ## Flutter Commands
 - `flutter run` - run app
@@ -32,3 +41,4 @@ App launcher with mini-apps ("applets"). Home screen = iPhone-style icon grid (4
 ## Conventions
 - NEVER commit or push without explicit user approval. Stage changes only.
 - Update this file when architecture or conventions change.
+- Use `sqflite` for all persistence storage needs in applets.

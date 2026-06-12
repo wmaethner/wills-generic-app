@@ -1,39 +1,48 @@
-import '../database.dart';
-import '../models.dart';
+import 'package:wills_generic_app/app/applet_repository.dart';
+import 'package:wills_generic_app/applets/competition_tracker/models.dart';
 import 'player_repository.dart';
 
-class MatchRepository {
-  final CompetitionTrackerDB _db;
+class MatchRepository extends AppletRepository<Match> {
   final PlayerRepository _playerRepo;
 
-  MatchRepository(this._db, this._playerRepo);
+  MatchRepository(super.db, this._playerRepo);
 
-  Future<Match> createMatch(Match match) async {
-    final id = await _db.insert('matches', match.toMap());
-    return match.copyWith(id: id);
-  }
+  @override
+  String get tableName => 'matches';
+
+  @override
+  Map<String, dynamic> toMap(Match item) => item.toMap();
+
+  @override
+  Match fromMap(Map<String, dynamic> map) => Match.fromMap(map);
+
+  @override
+  Match copyWithId(Match item, int id) => item.copyWith(id: id);
+
+  @override
+  int getId(Match item) => item.id;
+
+  Future<Match> createMatch(Match match) => create(match);
+
+  Future<void> deleteMatch(int id) => delete(id);
 
   Future<List<Match>> getMatches(int tournamentId) async {
-    final maps = await _db.query(
-      'matches',
+    final maps = await db.query(
+      tableName,
       where: 'tournament_id = ?',
       whereArgs: [tournamentId],
       orderBy: 'timestamp DESC',
     );
-    return maps.map((m) => Match.fromMap(m)).toList();
+    return maps.map(fromMap).toList();
   }
 
   Future<void> resolveMatch(int matchId, int? winnerId) async {
-    await _db.update(
-      'matches',
+    await db.update(
+      tableName,
       {'status': 'completed', 'winner_id': winnerId},
       where: 'id = ?',
       whereArgs: [matchId],
     );
-  }
-
-  Future<void> deleteMatch(int id) async {
-    await _db.delete('matches', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<List<PlayerStats>> getLeaderboardStats(int tournamentId) async {
