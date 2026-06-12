@@ -30,4 +30,5 @@ App launcher with mini-apps ("applets"). Home screen = iPhone-style icon grid (4
 - `flutter build apk` / `flutter build ios` - build release
 
 ## Conventions
+- NEVER commit or push without explicit user approval. Stage changes only.
 - Update this file when architecture or conventions change.

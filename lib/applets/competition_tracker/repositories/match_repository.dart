@@ -1,0 +1,129 @@
+import '../database.dart';
+import '../models.dart';
+import 'player_repository.dart';
+
+class MatchRepository {
+  final CompetitionTrackerDB _db;
+  final PlayerRepository _playerRepo;
+
+  MatchRepository(this._db, this._playerRepo);
+
+  Future<Match> createMatch(Match match) async {
+    final id = await _db.insert('matches', match.toMap());
+    return match.copyWith(id: id);
+  }
+
+  Future<List<Match>> getMatches(int tournamentId) async {
+    final maps = await _db.query(
+      'matches',
+      where: 'tournament_id = ?',
+      whereArgs: [tournamentId],
+      orderBy: 'timestamp DESC',
+    );
+    return maps.map((m) => Match.fromMap(m)).toList();
+  }
+
+  Future<void> resolveMatch(int matchId, int? winnerId) async {
+    await _db.update(
+      'matches',
+      {'status': 'completed', 'winner_id': winnerId},
+      where: 'id = ?',
+      whereArgs: [matchId],
+    );
+  }
+
+  Future<void> deleteMatch(int id) async {
+    await _db.delete('matches', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<PlayerStats>> getLeaderboardStats(int tournamentId) async {
+    final players = await _playerRepo.getPlayers(tournamentId);
+    final matches = await getMatches(tournamentId);
+    final completedMatches =
+        matches.where((m) => m.status == MatchStatus.completed).toList();
+
+    final stats = <int, PlayerStats>{};
+
+    for (final player in players) {
+      int wins = 0;
+      int losses = 0;
+      int ties = 0;
+      int currentStreak = 0;
+      int longestWinStreak = 0;
+      int tempWinStreak = 0;
+
+      final playerMatches = completedMatches
+          .where((m) => m.player1Id == player.id || m.player2Id == player.id)
+          .toList()
+        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+      for (final match in playerMatches) {
+        if (match.winnerId == null) {
+          ties++;
+          tempWinStreak = 0;
+        } else if (match.winnerId == player.id) {
+          wins++;
+          tempWinStreak++;
+          if (tempWinStreak > longestWinStreak) {
+            longestWinStreak = tempWinStreak;
+          }
+        } else {
+          losses++;
+          tempWinStreak = 0;
+        }
+      }
+
+      currentStreak = tempWinStreak;
+
+      final totalGames = wins + losses + ties;
+      final winRate = totalGames > 0 ? wins / totalGames : 0.0;
+
+      stats[player.id] = PlayerStats(
+        playerId: player.id,
+        playerName: player.name,
+        wins: wins,
+        losses: losses,
+        ties: ties,
+        winRate: winRate,
+        currentStreak: currentStreak,
+        longestWinStreak: longestWinStreak,
+      );
+    }
+
+    return stats.values.toList()
+      ..sort((a, b) {
+        if (b.wins != a.wins) return b.wins.compareTo(a.wins);
+        return b.winRate.compareTo(a.winRate);
+      });
+  }
+
+  Future<Map<String, int>> getHeadToHead(
+    int tournamentId,
+    int playerId,
+    int opponentId,
+  ) async {
+    final matches = await getMatches(tournamentId);
+    final completedMatches =
+        matches.where((m) => m.status == MatchStatus.completed).toList();
+
+    final h2h = completedMatches.where((m) =>
+        (m.player1Id == playerId && m.player2Id == opponentId) ||
+        (m.player1Id == opponentId && m.player2Id == playerId));
+
+    int wins = 0;
+    int losses = 0;
+    int ties = 0;
+
+    for (final match in h2h) {
+      if (match.winnerId == null) {
+        ties++;
+      } else if (match.winnerId == playerId) {
+        wins++;
+      } else {
+        losses++;
+      }
+    }
+
+    return {'wins': wins, 'losses': losses, 'ties': ties};
+  }
+}
