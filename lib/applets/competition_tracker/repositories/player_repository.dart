@@ -1,27 +1,31 @@
-import '../database.dart';
-import '../models.dart';
+import 'package:wills_generic_app/app/applet_repository.dart';
+import 'package:wills_generic_app/applets/competition_tracker/models.dart';
 
-class PlayerRepository {
-  final CompetitionTrackerDB _db;
+class PlayerRepository extends AppletRepository<Player> {
+  PlayerRepository(super.db);
 
-  PlayerRepository(this._db);
+  @override
+  String get tableName => 'players';
 
-  Future<Player> createPlayer(Player player) async {
-    final id = await _db.insert('players', player.toMap());
-    return player.copyWith(id: id);
-  }
+  @override
+  Map<String, dynamic> toMap(Player item) => item.toMap();
 
-  Future<List<Player>> getPlayers(int tournamentId) async {
-    final maps = await _db.query(
-      'players',
-      where: 'tournament_id = ?',
-      whereArgs: [tournamentId],
-      orderBy: 'name ASC',
-    );
-    return maps.map((m) => Player.fromMap(m)).toList();
-  }
+  @override
+  Player fromMap(Map<String, dynamic> map) => Player.fromMap(map);
 
-  Future<void> deletePlayer(int id) async {
-    await _db.delete('players', where: 'id = ?', whereArgs: [id]);
-  }
+  @override
+  Player copyWithId(Player item, int id) => item.copyWith(id: id);
+
+  @override
+  int getId(Player item) => item.id;
+
+  Future<List<Player>> getPlayers(int tournamentId) => getAll(
+    where: 'tournament_id = ?',
+    whereArgs: [tournamentId],
+    orderBy: 'name ASC',
+  );
+
+  Future<Player> createPlayer(Player player) => create(player);
+
+  Future<void> deletePlayer(int id) => delete(id);
 }
